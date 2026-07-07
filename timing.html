@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>上反射 タイミング計算機</title>
+  <style>
+    :root {
+      --bg-color: #0d0204;
+      --panel-bg: #140508;
+      --border-color: #ff1e56;
+      --text-color: #ffffff;
+      --text-muted: #ffa3b6;
+      --shadow-color: rgba(255, 30, 86, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Consolas', 'Courier New', monospace, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 15px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 440px;
+      margin-top: 10px;
+    }
+
+    /* 本家のデザインを再現した外枠（コーナー装飾） */
+    .panel {
+      background-color: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      padding: 20px 15px;
+      position: relative;
+      box-shadow: 0 0 15px var(--shadow-color);
+    }
+
+    /* コーナーの補強パーツ風装飾 */
+    .panel::before, .panel::after {
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border: 2px solid var(--border-color);
+    }
+    /* 左上と右下 */
+    .panel::before {
+      top: -1px;
+      left: -1px;
+      border-right: none;
+      border-bottom: none;
+    }
+    .panel::after {
+      bottom: -1px;
+      right: -1px;
+      border-left: none;
+      border-top: none;
+    }
+
+    /* ヘッダーエリア */
+    .header {
+      text-align: center;
+      margin-bottom: 25px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 15px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      letter-spacing: 2px;
+      color: var(--text-color);
+      text-shadow: 0 0 8px var(--border-color);
+    }
+
+    .header .sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 5px;
+      letter-spacing: 1px;
+    }
+
+    /* ラベル・セクションタイトル */
+    .label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-align: left;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .label::before {
+      content: "▶ ";
+      color: var(--border-color);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    /* 表面：3等分グリッド入力 */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    /* 裏面：2等分グリッド */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* 本家風ソリッドな入力ボックス */
+    input[type="number"] {
+      width: 100%;
+      background: #000000;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      font-size: 1.3rem;
+      padding: 10px;
+      text-align: center;
+      outline: none;
+    }
+
+    input[type="number"]:focus {
+      background: #1f050b;
+      box-shadow: 0 0 10px var(--border-color);
+    }
+
+    /* 突破球数：本家風カチッとしたセグメントボタン */
+    .segment-control {
+      display: flex;
+      border: 1px solid var(--border-color);
+      background: #000000;
+    }
+
+    .segment-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      padding: 12px 0;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.1s;
+    }
+
+    .segment-btn:not(:last-child) {
+      border-right: 1px solid var(--border-color);
+    }
+
+    .segment-btn.active {
+      background: var(--border-color);
+      color: #000000;
+      text-shadow: none;
+    }
+
+    /* 計算結果：超高視認性ネオンボックス */
+    .result-box {
+      margin-top: 25px;
+      border: 1px solid var(--border-color);
+      background: rgba(255, 30, 86, 0.05);
+      padding: 15px;
+      text-align: center;
+      box-shadow: inset 0 0 15px rgba(255, 30, 86, 0.1);
+    }
+
+    .result-title {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+
+    .result-value {
+      font-size: 3.2rem;
+      font-weight: bold;
+      color: var(--text-color);
+      text-shadow: 0 0 12px var(--border-color), 0 0 25px var(--border-color);
+      line-height: 1;
+      margin: 10px 0;
+    }
+
+    /* キーボード表示時のスクロール余裕用 */
+    .bottom-space {
+      height: 30px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="panel">
+    
+    <div class="header">
+      <h1>TIMING COMPUTER</h1>
+      <div class="sub">SYSTEM VERSION 2.0 // RUBY</div>
+    </div>
+
+    <!-- 表面入力 -->
+    <div class="form-group">
+      <div class="label">表面：落とした秒数 / 突破秒数</div>
+      <div class="grid-3">
+        <input type="number" id="input1" inputmode="decimal" step="0.01" oninput="calculate()" placeholder="0.00">
+        <input type="number" id="input2" inputmode="decimal" step="0.01" oninput="calculate()" placeholder="0.00">
+        <input type="number" id="input3" inputmode="decimal" step="0.01" oninput="calculate()" placeholder="0.00">
+      </div>
+    </div>
+
+    <!-- 突破球数選択 -->
+    <div class="form-group">
+      <div class="label">突破球数</div>
+      <div class="segment-control">
+        <button class="segment-btn" id="mode1" onclick="changeMode(1)">1球</button>
+        <button class="segment-btn active" id="mode2" onclick="changeMode(2)">2球</button>
+        <button class="segment-btn" id="mode3" onclick="changeMode(3)">3球</button>
+      </div>
+      <input type="hidden" id="mode" value="2">
+    </div>
+
+    <!-- 裏面設定 -->
+    <div class="grid-2">
+      <div class="form-group">
+        <div class="label">裏面：狙う球数</div>
+        <input type="number" id="n" inputmode="numeric" step="1" min="1" value="1" oninput="calculate()">
+      </div>
+      <div class="form-group">
+        <div class="label">裏面：ロス秒数</div>
+        <input type="number" id="w" inputmode="decimal" step="0.01" value="0.00" oninput="calculate()" placeholder="0.00">
+      </div>
+    </div>
+
+    <!-- 計算結果 -->
+    <div class="result-box">
+      <div class="result-title">TARGET TIMING</div>
+      <div class="result-value" id="output">0.00 秒</div>
+    </div>
+
+    <div class="bottom-space"></div>
+  </div>
+</div>
+
+<script>
+  // モード（突破球数）切り替え
+  function changeMode(val) {
+    document.getElementById('mode').value = val;
+    
+    document.getElementById('mode1').classList.remove('active');
+    document.getElementById('mode2').classList.remove('active');
+    document.getElementById('mode3').classList.remove('active');
+    
+    document.getElementById('mode' + val).classList.add('active');
+    
+    calculate();
+  }
+
+  // オリジナルの計算ロジックを完全維持
+  function calculate() {
+    const num1 = parseFloat(document.getElementById('input1').value) || 0;
+    const num2 = parseFloat(document.getElementById('input2').value) || 0;
+    const num3 = parseFloat(document.getElementById('input3').value) || 0;
+    const mode = parseInt(document.getElementById('mode').value) || 2;
+    const n = parseInt(document.getElementById('n').value) || 1;
+    const w = parseFloat(document.getElementById('w').value) || 0;
+
+    const S = num1 + num2 + num3;
+
+    let t_base;
+    if (mode === 1) {
+      t_base = 2.5;
+    } else if (mode === 2) {
+      t_base = 4;
+    } else if (mode === 3) {
+      t_base = 5.5;
+    } else {
+      t_base = 4;
+    }
+
+    let t = (t_base - S) % 10;
+    if (t < 0) t += 10;
+
+    let t2 = t + 1.5 * (n - 1) - w;
+    t2 = ((t2 % 10) + 10) % 10;
+
+    const t2_display = t2.toFixed(2);
+    document.getElementById('output').innerHTML = t2_display + " 秒";
+  }
+
+  // 初回計算
+  calculate();
+</script>
+</body>
+</html>
