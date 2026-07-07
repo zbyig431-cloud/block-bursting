@@ -283,7 +283,6 @@
       box-shadow: inset 0 0 15px rgba(255, 30, 86, 0.1);
     }
 
-    /* 逆算枠をメインより小さく調整 */
     .result-box.adjust-box {
       border-color: var(--adjust-color);
       background: rgba(255, 234, 0, 0.03);
@@ -301,7 +300,6 @@
       color: var(--adjust-color);
     }
 
-    /* メイン表示：大きいネオン */
     .result-value {
       font-size: 2.8rem;
       font-weight: bold;
@@ -311,7 +309,6 @@
       margin: 8px 0;
     }
     
-    /* 逆算の数値サイズを小さめに変更 */
     .adjust-box .result-value {
       font-size: 1.8rem; 
       text-shadow: 0 0 8px var(--adjust-color);
@@ -321,9 +318,77 @@
     .bottom-space {
       height: 20px;
     }
+
+    /* フルスクリーンクリアモーダル画面 */
+    .clear-modal {
+      display: none; /* 初期状態は非表示 */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #ffffff;
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 画像に寄せた中央揃えテキストスタイル */
+    .clear-content {
+      text-align: center;
+      color: #333333;
+      font-family: 'Hiragino Kaku Gothic ProN', 'Sans-Serif', sans-serif;
+    }
+
+    .clear-title {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 25px;
+      letter-spacing: 1px;
+    }
+
+    .clear-sub {
+      font-size: 1.6rem;
+      font-weight: bold;
+      letter-spacing: 0px;
+    }
+
+    /* 左上の×閉じるボタン */
+    .close-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .close-btn::before, .close-btn::after {
+      content: '';
+      position: absolute;
+      width: 25px;
+      height: 3px;
+      background-color: #333333;
+    }
+    .close-btn::before { transform: rotate(45deg); }
+    .close-btn::after { transform: rotate(-45deg); }
   </style>
 </head>
 <body>
+
+<!-- クリアモーダル画面 -->
+<div id="clearScreen" class="clear-modal">
+  <button class="close-btn" onclick="closeClearScreen()"></button>
+  <div class="clear-content">
+    <div class="clear-title">[GAMEクリア]</div>
+    <div class="clear-sub">こんぐらっちゅれいしょん</div>
+  </div>
+</div>
 
 <div class="wrapper">
   <div class="panel">
@@ -388,13 +453,13 @@
     </div>
 
     <div class="results-container">
-      <!-- 2.50秒調整用枠（サイズを縮小） -->
+      <!-- 2.50秒調整用枠 -->
       <div class="result-box adjust-box">
         <div class="result-title">NEXT TARGET ADJUST (FOR 2.50s)</div>
         <div class="result-value" id="adjust-output">0.00 秒</div>
       </div>
 
-      <!-- 通常の計算結果枠（メインサイズ） -->
+      <!-- 通常の計算結果枠 -->
       <div class="result-box">
         <div class="result-title">TARGET TIMING</div>
         <div class="result-value" id="output">0.00 秒</div>
@@ -472,6 +537,12 @@
       })
       .replace(/ー|〜/g, '');
 
+    // 「クリアした」の検知処理
+    if (normalized.includes("クリアした") || normalized.includes("くりあした")) {
+      showClearScreen();
+      return;
+    }
+
     const numberMatch = normalized.match(/\d+(\.\d+)?/);
     if (!numberMatch) {
       speakText("もういちど");
@@ -483,7 +554,6 @@
     if (normalized.includes("表") || normalized.includes("おもて")) {
       frontSpeakCount++;
       
-      // 値をスロットに格納
       if (frontSpeakCount === 1) {
         document.getElementById('input1').value = value.toFixed(2);
       } else if (frontSpeakCount === 2) {
@@ -494,15 +564,13 @@
 
       const isClear = normalized.includes("突破") || normalized.includes("とっぱ") || frontSpeakCount >= 3;
       
-      // 【重要】「突破」と言っていない場合は、次の球数モードへ自動移行させてから計算する
       if (!isClear) {
         if (frontSpeakCount === 1) {
-          changeMode(2); // 1球目入力検知 -> 2球突破モードへ移行
+          changeMode(2); 
         } else if (frontSpeakCount === 2) {
-          changeMode(3); // 2球目入力検知 -> 3球突破モードへ移行
+          changeMode(3); 
         }
       } else {
-        // 「突破」と言われた場合は、現在の入力カウントに応じたモードで確定させる
         if (frontSpeakCount === 1) changeMode(1);
         if (frontSpeakCount === 2) changeMode(2);
         if (frontSpeakCount === 3) changeMode(3);
@@ -526,10 +594,24 @@
   function speakText(msg) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const uttr = new SpeechSynthesisUtterance(msg);
-    uttr.lang = 'ja-JP';
-    uttr.rate = 1.2;
-    window.speechSynthesis.speak(uttr);
+    const uttr = new SynthesisUtterance(msg); // 互換性考慮のため分岐
+    const SpeechUtterance = window.SpeechSynthesisUtterance || window.webkitSpeechSynthesisUtterance;
+    const finalUttr = new SpeechUtterance(msg);
+    finalUttr.lang = 'ja-JP';
+    finalUttr.rate = 1.2;
+    window.speechSynthesis.speak(finalUttr);
+  }
+
+  /* クリア画面の表示とアナウンス */
+  function showClearScreen() {
+    document.getElementById('clearScreen').style.display = 'flex';
+    speakText("ゲームクリア コングラチュレーション");
+  }
+
+  /* クリア画面を閉じる（同時にオールリセット） */
+  function closeClearScreen() {
+    document.getElementById('clearScreen').style.display = 'none';
+    allReset();
   }
 
   function changeMode(val) {
@@ -557,7 +639,6 @@
     calculate(isFromVoice, 'rear', false);
   }
 
-  // 初期段階・リセット段階を「1球突破」へ変更
   function allReset() {
     document.getElementById('input1').value = "";
     document.getElementById('input2').value = "";
@@ -568,7 +649,7 @@
     frontSpeakCount = 0;
     document.getElementById('accumulated-display').innerHTML = "STOCKED: 0.00s";
     
-    changeMode(1); // デフォルトを 1球 に設定
+    changeMode(1); 
     changeTargetN(1);
     
     calculate(false);
@@ -586,7 +667,6 @@
 
     const S = num1 + num2 + num3;
 
-    // 1. 通常のターゲットタイミング計算
     let t_base;
     if (mode === 1) t_base = 3.0;
     else if (mode === 2) t_base = 4.5;
@@ -602,7 +682,6 @@
     const t2_display = t2.toFixed(2);
     document.getElementById('output').innerHTML = t2_display + " 秒";
 
-    // 2. 「答えを2.50秒にするため」の逆算値計算 (現在選択されているモード基準)
     let targetS;
     if (mode === 1) targetS = 0.5;
     else if (mode === 2) targetS = 2.0;
@@ -615,7 +694,6 @@
     const adjust_display = requiredNext.toFixed(2);
     document.getElementById('adjust-output').innerHTML = adjust_display + " 秒";
 
-    // 3. 音声フィードバック
     if (shouldSpeak) {
       if (triggerType === 'front') {
         if (isClear) {
