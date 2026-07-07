@@ -94,11 +94,19 @@
       text-align: left;
       font-weight: bold;
       letter-spacing: 1px;
+      display: flex;
+      justify-content: space-between;
     }
 
     .label::before {
       content: "▶ ";
       color: var(--border-color);
+    }
+    
+    .label .sub-counter {
+      font-size: 0.75rem;
+      color: var(--border-color);
+      font-weight: normal;
     }
 
     .form-group {
@@ -111,10 +119,10 @@
       gap: 8px;
     }
 
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+    /* ロス秒数入力欄とADDボタンの横並び用 */
+    .input-with-btn {
+      display: flex;
+      gap: 8px;
     }
 
     input[type="number"] {
@@ -131,6 +139,11 @@
     input[type="number"]:focus {
       background: #1f050b;
       box-shadow: 0 0 10px var(--border-color);
+    }
+
+    /* プレースホルダーの文字色を薄く調整 */
+    input::placeholder {
+      color: rgba(255, 163, 182, 0.3);
     }
 
     .segment-control {
@@ -161,6 +174,46 @@
       text-shadow: none;
     }
 
+    /* アクションボタン（ADD / RESET） */
+    .action-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--border-color);
+      font-size: 1rem;
+      font-weight: bold;
+      padding: 0 15px;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+
+    .action-btn:active {
+      background: var(--border-color);
+      color: #000000;
+    }
+
+    .reset-btn-wrapper {
+      margin-top: 25px;
+      text-align: center;
+    }
+
+    .reset-btn {
+      width: 100%;
+      background: rgba(255, 30, 86, 0.1);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 12px 0;
+      cursor: pointer;
+      letter-spacing: 2px;
+      transition: all 0.1s;
+    }
+
+    .reset-btn:active {
+      background: var(--border-color);
+      color: #000000;
+    }
+
     .result-box {
       margin-top: 25px;
       border: 1px solid var(--border-color);
@@ -187,7 +240,7 @@
     }
 
     .bottom-space {
-      height: 30px;
+      height: 20px;
     }
   </style>
 </head>
@@ -198,12 +251,12 @@
     
     <div class="header">
       <h1>TIMING COMPUTER</h1>
-      <div class="sub">SYSTEM VERSION 2.1 // RUBY</div>
+      <div class="sub">SYSTEM VERSION 2.2 // RUBY</div>
     </div>
 
     <!-- 表面入力 -->
     <div class="form-group">
-      <div class="label">表面：落とした秒数 / 突破秒数</div>
+      <div class="label"><div>表面：落とした秒数 / 突破秒数</div></div>
       <div class="grid-3">
         <input type="number" id="input1" inputmode="decimal" step="0.01" oninput="calculate()" placeholder="0.00">
         <input type="number" id="input2" inputmode="decimal" step="0.01" oninput="calculate()" placeholder="0.00">
@@ -213,7 +266,7 @@
 
     <!-- 突破球数選択 -->
     <div class="form-group">
-      <div class="label">突破球数</div>
+      <div class="label"><div>突破球数</div></div>
       <div class="segment-control">
         <button class="segment-btn" id="mode1" onclick="changeMode(1)">1球</button>
         <button class="segment-btn active" id="mode2" onclick="changeMode(2)">2球</button>
@@ -222,15 +275,28 @@
       <input type="hidden" id="mode" value="2">
     </div>
 
-    <!-- 裏面設定 -->
-    <div class="grid-2">
-      <div class="form-group">
-        <div class="label">裏面：狙う球数</div>
-        <input type="number" id="n" inputmode="numeric" step="1" min="1" value="1" oninput="calculate()">
+    <!-- 裏面：狙う球数 (1~5) -->
+    <div class="form-group">
+      <div class="label"><div>裏面：狙う球数</div></div>
+      <div class="segment-control">
+        <button class="segment-btn active" id="target_n1" onclick="changeTargetN(1)">1</button>
+        <button class="segment-btn" id="target_n2" onclick="changeTargetN(2)">2</button>
+        <button class="segment-btn" id="target_n3" onclick="changeTargetN(3)">3</button>
+        <button class="segment-btn" id="target_n4" onclick="changeTargetN(4)">4</button>
+        <button class="segment-btn" id="target_n5" onclick="changeTargetN(5)">5</button>
       </div>
-      <div class="form-group">
-        <div class="label">裏面：ロス秒数</div>
-        <input type="number" id="w" inputmode="decimal" step="0.01" value="0.00" oninput="calculate()" placeholder="0.00">
+      <input type="hidden" id="n" value="1">
+    </div>
+
+    <!-- 裏面：ロス秒数 -->
+    <div class="form-group">
+      <div class="label">
+        <div>裏面：ロス秒数</div>
+        <div class="sub-counter" id="accumulated-display">STOCKED: 0.00s</div>
+      </div>
+      <div class="input-with-btn">
+        <input type="number" id="w" inputmode="decimal" step="0.01" oninput="calculate()" placeholder="0.00">
+        <button class="action-btn" onclick="addLoss()">+ADD</button>
       </div>
     </div>
 
@@ -240,34 +306,84 @@
       <div class="result-value" id="output">0.00 秒</div>
     </div>
 
+    <!-- オールリセットボタン -->
+    <div class="reset-btn-wrapper">
+      <button class="reset-btn" onclick="allReset()">ALL RESET</button>
+    </div>
+
     <div class="bottom-space"></div>
   </div>
 </div>
 
 <script>
+  // ロス秒数の内部蓄積用変数
+  let accumulatedLoss = 0.0;
+
+  // 突破球数切り替え
   function changeMode(val) {
     document.getElementById('mode').value = val;
+    for (let i = 1; i <= 3; i++) {
+      document.getElementById('mode' + i).classList.toggle('active', i === val);
+    }
+    calculate();
+  }
+
+  // 裏面：狙う球数切り替え (1~5)
+  function changeTargetN(val) {
+    document.getElementById('n').value = val;
+    for (let i = 1; i <= 5; i++) {
+      document.getElementById('target_n' + i).classList.toggle('active', i === val);
+    }
+    calculate();
+  }
+
+  // ロス秒数の追加（ADD）処理
+  function addLoss() {
+    const currentInput = parseFloat(document.getElementById('w').value) || 0.0;
+    accumulatedLoss += currentInput;
     
-    document.getElementById('mode1').classList.remove('active');
-    document.getElementById('mode2').classList.remove('active');
-    document.getElementById('mode3').classList.remove('active');
+    // カウンター表示の更新
+    document.getElementById('accumulated-display').innerHTML = "STOCKED: " + accumulatedLoss.toFixed(2) + "s";
     
-    document.getElementById('mode' + val).classList.add('active');
+    // 入力欄をクリアしてフォーカス
+    document.getElementById('w').value = "";
     
     calculate();
   }
 
+  // オールリセット処理
+  function allReset() {
+    // 入力欄のクリア
+    document.getElementById('input1').value = "";
+    document.getElementById('input2').value = "";
+    document.getElementById('input3').value = "";
+    document.getElementById('w').value = "";
+    
+    // 蓄積ロスの初期化
+    accumulatedLoss = 0.0;
+    document.getElementById('accumulated-display').innerHTML = "STOCKED: 0.00s";
+    
+    // 各選択肢を初期状態（2球 / 1球狙い）に戻す
+    changeMode(2);
+    changeTargetN(1);
+    
+    calculate();
+  }
+
+  // 計算メインロジック
   function calculate() {
     const num1 = parseFloat(document.getElementById('input1').value) || 0;
     const num2 = parseFloat(document.getElementById('input2').value) || 0;
     const num3 = parseFloat(document.getElementById('input3').value) || 0;
     const mode = parseInt(document.getElementById('mode').value) || 2;
     const n = parseInt(document.getElementById('n').value) || 1;
-    const w = parseFloat(document.getElementById('w').value) || 0;
+    
+    // 現在の入力値 ＋ これまでにADDされた蓄積値
+    const currentWInput = parseFloat(document.getElementById('w').value) || 0;
+    const totalW = accumulatedLoss + currentWInput;
 
     const S = num1 + num2 + num3;
 
-    // 計算式の見直し（全体を+0.5秒スライド調整）
     let t_base;
     if (mode === 1) {
       t_base = 3.0;
@@ -282,13 +398,14 @@
     let t = (t_base - S) % 10;
     if (t < 0) t += 10;
 
-    let t2 = t + 1.5 * (n - 1) - w;
+    let t2 = t + 1.5 * (n - 1) - totalW;
     t2 = ((t2 % 10) + 10) % 10;
 
     const t2_display = t2.toFixed(2);
     document.getElementById('output').innerHTML = t2_display + " 秒";
   }
 
+  // 初回起動時の計算
   calculate();
 </script>
 </body>
