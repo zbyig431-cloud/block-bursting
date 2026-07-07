@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>上反射 タイミング計算機</title>
+  <title>絶望要塞 タイミング計算機</title>
   <style>
     :root {
       --bg-color: #0d0204;
@@ -13,11 +13,12 @@
       --text-muted: #ffa3b6;
       --shadow-color: rgba(255, 30, 86, 0.4);
       --voice-active: #00ffcc;
+      --adjust-color: #ffea00;
     }
 
     * {
       box-sizing: border-box;
-      font-family: 'Consolas', 'Courier New', monospace, sans-serif;
+      font-family: 'Impact', 'Consolas', 'Courier New', monospace, sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -66,6 +67,7 @@
       border-top: none;
     }
 
+    /* ロゴ再現ヘッダー */
     .header {
       text-align: center;
       margin-bottom: 20px;
@@ -73,22 +75,39 @@
       padding-bottom: 15px;
     }
 
-    .header h1 {
-      margin: 0;
-      font-size: 1.4rem;
-      letter-spacing: 2px;
-      color: var(--text-color);
-      text-shadow: 0 0 8px var(--border-color);
+    .logo-main {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: -1px;
+      line-height: 0.9;
+      text-shadow: 3px 3px 0px #000, -1px -1px 0px #ff1e56;
+      font-style: italic;
     }
 
-    .header .sub {
+    .logo-sub {
+      background: #1a0206;
+      border: 1px solid #ff1e56;
+      color: #ff1e56;
       font-size: 0.75rem;
-      color: var(--text-muted);
+      font-weight: bold;
+      letter-spacing: 5px;
+      padding: 2px 0;
       margin-top: 5px;
-      letter-spacing: 1px;
+      display: inline-block;
+      width: 90%;
+      box-shadow: 0 0 8px rgba(255, 30, 86, 0.4);
     }
 
-    /* 音声コントロール用スタイル */
+    .logo-title {
+      font-size: 1.05rem;
+      color: var(--text-color);
+      margin-top: 12px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-shadow: 0 0 6px var(--border-color);
+    }
+
     .voice-control {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -228,7 +247,7 @@
     }
 
     .reset-btn-wrapper {
-      margin-top: 25px;
+      margin-top: 20px;
       text-align: center;
     }
 
@@ -250,29 +269,47 @@
       color: #000000;
     }
 
-    .result-box {
+    .results-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
       margin-top: 25px;
+    }
+
+    .result-box {
       border: 1px solid var(--border-color);
       background: rgba(255, 30, 86, 0.05);
-      padding: 15px;
+      padding: 12px;
       text-align: center;
       box-shadow: inset 0 0 15px rgba(255, 30, 86, 0.1);
+    }
+
+    .result-box.adjust-box {
+      border-color: var(--adjust-color);
+      background: rgba(255, 234, 0, 0.03);
+      box-shadow: inset 0 0 15px rgba(255, 234, 0, 0.05);
     }
 
     .result-title {
       font-size: 0.75rem;
       color: var(--text-muted);
       letter-spacing: 2px;
-      margin-bottom: 5px;
+      margin-bottom: 3px;
+    }
+    .adjust-box .result-title {
+      color: var(--adjust-color);
     }
 
     .result-value {
-      font-size: 3.2rem;
+      font-size: 2.8rem;
       font-weight: bold;
       color: var(--text-color);
       text-shadow: 0 0 12px var(--border-color), 0 0 25px var(--border-color);
       line-height: 1;
-      margin: 10px 0;
+      margin: 8px 0;
+    }
+    .adjust-box .result-value {
+      text-shadow: 0 0 12px var(--adjust-color), 0 0 25px var(--adjust-color);
     }
 
     .bottom-space {
@@ -285,12 +322,14 @@
 <div class="wrapper">
   <div class="panel">
     
+    <!-- 新デザインヘッダー -->
     <div class="header">
-      <h1>TIMING COMPUTER</h1>
-      <div class="sub">SYSTEM VERSION 3.0 // VOICE HYBRID</div>
+      <div class="logo-main">绝望要塞</div>
+      <div class="logo-sub">IMPOSSIBLE GAMES</div>
+      <div class="logo-title">【ブロック崩し 上反射】</div>
     </div>
 
-    <!-- 音声コントロールボタン -->
+    <!-- 音声コントロール -->
     <div class="voice-control">
       <button id="voice-start" class="voice-btn" onclick="startVoiceRecognition()">VOICE START</button>
       <button id="voice-stop" class="voice-btn" onclick="stopVoiceRecognition()">VOICE STOP</button>
@@ -318,9 +357,9 @@
       <input type="hidden" id="mode" value="2">
     </div>
 
-    <!-- 裏面：狙う球数 -->
+    <!-- 裏面/球目 -->
     <div class="form-group">
-      <div class="label"><div>裏面：狙う球数</div></div>
+      <div class="label"><div>裏面/球目</div></div>
       <div class="segment-control">
         <button class="segment-btn active" id="target_n1" onclick="changeTargetN(1)">1</button>
         <button class="segment-btn" id="target_n2" onclick="changeTargetN(2)">2</button>
@@ -343,10 +382,18 @@
       </div>
     </div>
 
-    <!-- 計算結果 -->
-    <div class="result-box">
-      <div class="result-title">TARGET TIMING</div>
-      <div class="result-value" id="output">0.00 秒</div>
+    <div class="results-container">
+      <!-- 2.50秒調整用の逆算別枠 -->
+      <div class="result-box adjust-box">
+        <div class="result-title">NEXT TARGET ADJUST (FOR 2.50s)</div>
+        <div class="result-value" id="adjust-output">0.00 秒</div>
+      </div>
+
+      <!-- 通常の計算結果枠 -->
+      <div class="result-box">
+        <div class="result-title">TARGET TIMING</div>
+        <div class="result-value" id="output">0.00 秒</div>
+      </div>
     </div>
 
     <!-- オールリセット -->
@@ -360,20 +407,17 @@
 
 <script>
   let accumulatedLoss = 0.0;
-  
-  // 音声システム用のカウント変数
   let frontSpeakCount = 0;
   let isVoiceActive = false;
 
-  // 音声認識のセットアップ（主要ブラウザ対応）
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let recognition = null;
 
   if (SpeechRecognition) {
     recognition = new SpeechRecognition();
     recognition.lang = 'ja-JP';
-    recognition.interimResults = false; // 確定した結果だけ取得
-    recognition.continuous = true;      // STOPが押されるまで連続で聴き取る
+    recognition.interimResults = false;
+    recognition.continuous = true;
 
     recognition.onresult = function(event) {
       const lastIndex = event.results.length - 1;
@@ -383,9 +427,8 @@
     };
 
     recognition.onend = function() {
-      if (isVoiceActive) {
-        recognition.start(); // 予期せず切れた場合は自動で再スタート
-      } else {
+      if (isVoiceActive) recognition.start();
+      else {
         document.getElementById('voice-status').innerHTML = "VOICE SYSTEM: STANDBY";
         document.getElementById('voice-start').classList.remove('listening');
       }
@@ -396,11 +439,8 @@
     };
   } else {
     document.getElementById('voice-status').innerHTML = "VOICE NOT SUPPORTED ON THIS BROWSER";
-    document.getElementById('voice-start').style.display = 'none';
-    document.getElementById('voice-stop').style.display = 'none';
   }
 
-  // 音声認識スタート
   function startVoiceRecognition() {
     if (!recognition) return;
     isVoiceActive = true;
@@ -410,18 +450,17 @@
     speakText("音声入力を開始します");
   }
 
-  // 音声認識ストップ
+  // VOICE STOP時にリセット処理(allReset)を走らせるよう統合
   function stopVoiceRecognition() {
     if (!recognition) return;
     isVoiceActive = false;
     document.getElementById('voice-start').classList.remove('listening');
     recognition.stop();
     speakText("音声入力を終了します");
+    allReset(); // リセットを実行
   }
 
-  // 声のテキストを解析するロジック
   function parseSpeech(text) {
-    // 全角数字や「てん」を半角のドット数値に正規化
     let normalized = text.toLowerCase()
       .replace(/点|てん/g, '.')
       .replace(/[０-９]/g, function(s) {
@@ -429,9 +468,7 @@
       })
       .replace(/ー|〜/g, '');
 
-    // 数字部分を抽出する正規表現
     const numberMatch = normalized.match(/\d+(\.\d+)?/);
-    
     if (!numberMatch) {
       speakText("もういちど");
       return;
@@ -441,6 +478,7 @@
 
     if (normalized.includes("表") || normalized.includes("おもて")) {
       frontSpeakCount++;
+      
       if (frontSpeakCount === 1) {
         document.getElementById('input1').value = value.toFixed(2);
         changeMode(1);
@@ -451,35 +489,32 @@
         document.getElementById('input3').value = value.toFixed(2);
         changeMode(3);
       }
+
+      const isClear = normalized.includes("突破") || normalized.includes("とっぱ") || frontSpeakCount >= 3;
+      calculate(true, 'front', isClear);
     } 
     else if (normalized.includes("裏") || normalized.includes("うら")) {
-      // 1回目の「裏」➔ 狙う球数を2に。2回目 ➔ 3に。（言った回数+1）
       const currentN = parseInt(document.getElementById('n').value) || 1;
       if (currentN < 5) {
         changeTargetN(currentN + 1);
       }
-      // ロス秒数に代入してADDを実行
       document.getElementById('w').value = value;
-      addLoss(true); // 音声からの呼び出し時は中身でcalculate(true)が走る
+      addLoss(true); 
     } 
     else {
-      // キーワード「表」「裏」が含まれなかった場合
       speakText("もういちど");
     }
   }
 
-  // 音声合成（Siri風フィードバック）
   function speakText(msg) {
     if (!window.speechSynthesis) return;
-    // 前の再生を止めて即座に喋らせる
     window.speechSynthesis.cancel();
     const uttr = new SpeechSynthesisUtterance(msg);
     uttr.lang = 'ja-JP';
-    uttr.rate = 1.2; // 少し早口で実戦向きに
+    uttr.rate = 1.2;
     window.speechSynthesis.speak(uttr);
   }
 
-  // 突破球数切り替え
   function changeMode(val) {
     document.getElementById('mode').value = val;
     for (let i = 1; i <= 3; i++) {
@@ -488,7 +523,6 @@
     calculate(false);
   }
 
-  // 裏面：狙う球数切り替え
   function changeTargetN(val) {
     document.getElementById('n').value = val;
     for (let i = 1; i <= 5; i++) {
@@ -497,18 +531,15 @@
     calculate(false);
   }
 
-  // ロス秒数追加
   function addLoss(isFromVoice = false) {
     const currentInput = parseFloat(document.getElementById('w').value) || 0.0;
     accumulatedLoss += currentInput;
     document.getElementById('accumulated-display').innerHTML = "STOCKED: " + accumulatedLoss.toFixed(2) + "s";
     document.getElementById('w').value = "";
     
-    // 音声からのADD要求なら音声返答付きで計算、手動なら通常の計算
-    calculate(isFromVoice);
+    calculate(isFromVoice, 'rear', false);
   }
 
-  // 全リセット
   function allReset() {
     document.getElementById('input1').value = "";
     document.getElementById('input2').value = "";
@@ -525,8 +556,7 @@
     calculate(false);
   }
 
-  // メイン計算（引数 shouldSpeak が true の時だけ音声回答する）
-  function calculate(shouldSpeak = false) {
+  function calculate(shouldSpeak = false, triggerType = '', isClear = false) {
     const num1 = parseFloat(document.getElementById('input1').value) || 0;
     const num2 = parseFloat(document.getElementById('input2').value) || 0;
     const num3 = parseFloat(document.getElementById('input3').value) || 0;
@@ -538,6 +568,7 @@
 
     const S = num1 + num2 + num3;
 
+    // 1. 通常のターゲットタイミング計算
     let t_base;
     if (mode === 1) t_base = 3.0;
     else if (mode === 2) t_base = 4.5;
@@ -553,9 +584,32 @@
     const t2_display = t2.toFixed(2);
     document.getElementById('output').innerHTML = t2_display + " 秒";
 
-    // 音声認識経由での計算完了時のみ、結果を簡潔に発声
+    // 2. 修正版：「答えを2.50秒にするため」の逆算値計算
+    // 結果を2.50秒にするために満たすべき表面合計(targetS)を算出
+    let targetS;
+    if (mode === 1) targetS = 0.5;
+    else if (mode === 2) targetS = 2.0;
+    else if (mode === 3) targetS = 3.5;
+    else targetS = 2.0;
+
+    // 目標の合計に到達するために「次に追加すべき秒数」を算出
+    let requiredNext = (targetS - S) % 10;
+    if (requiredNext < 0) requiredNext += 10;
+    
+    const adjust_display = requiredNext.toFixed(2);
+    document.getElementById('adjust-output').innerHTML = adjust_display + " 秒";
+
+    // 3. 音声フィードバック
     if (shouldSpeak) {
-      speakText(t2_display + "秒です");
+      if (triggerType === 'front') {
+        if (isClear) {
+          speakText(t2_display + "秒です");
+        } else {
+          speakText(adjust_display + "秒で突破してください");
+        }
+      } else if (triggerType === 'rear') {
+        speakText(t2_display + "秒です");
+      }
     }
   }
 
