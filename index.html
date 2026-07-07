@@ -321,7 +321,7 @@
 
     /* フルスクリーンクリアモーダル画面 */
     .clear-modal {
-      display: none; /* 初期状態は非表示 */
+      display: none;
       position: fixed;
       top: 0;
       left: 0;
@@ -333,7 +333,6 @@
       align-items: center;
     }
 
-    /* 画像に寄せた中央揃えテキストスタイル */
     .clear-content {
       text-align: center;
       color: #333333;
@@ -353,7 +352,6 @@
       letter-spacing: 0px;
     }
 
-    /* 左上の×閉じるボタン */
     .close-btn {
       position: absolute;
       top: 20px;
@@ -594,15 +592,16 @@
   function speakText(msg) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const uttr = new SynthesisUtterance(msg); // 互換性考慮のため分岐
+    
+    // ブラウザ互換性を持たせた安全な発声オブジェクトの生成
     const SpeechUtterance = window.SpeechSynthesisUtterance || window.webkitSpeechSynthesisUtterance;
-    const finalUttr = new SpeechUtterance(msg);
-    finalUttr.lang = 'ja-JP';
-    finalUttr.rate = 1.2;
-    window.speechSynthesis.speak(finalUttr);
+    const uttr = new SpeechUtterance(msg);
+    uttr.lang = 'ja-JP';
+    uttr.rate = 1.2;
+    window.speechSynthesis.speak(uttr);
   }
 
-  /* クリア画面の表示とアナウンス */
+  /* クリア画面の表示とアナウンス（タイポ修正版） */
   function showClearScreen() {
     document.getElementById('clearScreen').style.display = 'flex';
     speakText("ゲームクリア コングラチュレーション");
