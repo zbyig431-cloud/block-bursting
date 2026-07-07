@@ -37,7 +37,6 @@
       margin-top: 10px;
     }
 
-    /* 本家のデザインを再現した外枠（コーナー装飾） */
     .panel {
       background-color: var(--panel-bg);
       border: 1px solid var(--border-color);
@@ -46,7 +45,6 @@
       box-shadow: 0 0 15px var(--shadow-color);
     }
 
-    /* コーナーの補強パーツ風装飾 */
     .panel::before, .panel::after {
       content: "";
       position: absolute;
@@ -54,7 +52,6 @@
       height: 10px;
       border: 2px solid var(--border-color);
     }
-    /* 左上と右下 */
     .panel::before {
       top: -1px;
       left: -1px;
@@ -68,7 +65,6 @@
       border-top: none;
     }
 
-    /* ヘッダーエリア */
     .header {
       text-align: center;
       margin-bottom: 25px;
@@ -91,7 +87,6 @@
       letter-spacing: 1px;
     }
 
-    /* ラベル・セクションタイトル */
     .label {
       font-size: 0.85rem;
       color: var(--text-muted);
@@ -110,21 +105,18 @@
       margin-bottom: 20px;
     }
 
-    /* 表面：3等分グリッド入力 */
     .grid-3 {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
     }
 
-    /* 裏面：2等分グリッド */
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
 
-    /* 本家風ソリッドな入力ボックス */
     input[type="number"] {
       width: 100%;
       background: #000000;
@@ -141,7 +133,6 @@
       box-shadow: 0 0 10px var(--border-color);
     }
 
-    /* 突破球数：本家風カチッとしたセグメントボタン */
     .segment-control {
       display: flex;
       border: 1px solid var(--border-color);
@@ -170,7 +161,6 @@
       text-shadow: none;
     }
 
-    /* 計算結果：超高視認性ネオンボックス */
     .result-box {
       margin-top: 25px;
       border: 1px solid var(--border-color);
@@ -196,7 +186,6 @@
       margin: 10px 0;
     }
 
-    /* キーボード表示時のスクロール余裕用 */
     .bottom-space {
       height: 30px;
     }
@@ -209,7 +198,7 @@
     
     <div class="header">
       <h1>TIMING COMPUTER</h1>
-      <div class="sub">SYSTEM VERSION 2.0 // RUBY</div>
+      <div class="sub">SYSTEM VERSION 2.1 // RUBY</div>
     </div>
 
     <!-- 表面入力 -->
@@ -256,7 +245,6 @@
 </div>
 
 <script>
-  // モード（突破球数）切り替え
   function changeMode(val) {
     document.getElementById('mode').value = val;
     
@@ -269,7 +257,6 @@
     calculate();
   }
 
-  // オリジナルの計算ロジックを完全維持
   function calculate() {
     const num1 = parseFloat(document.getElementById('input1').value) || 0;
     const num2 = parseFloat(document.getElementById('input2').value) || 0;
@@ -280,15 +267,16 @@
 
     const S = num1 + num2 + num3;
 
+    // 計算式の見直し（全体を+0.5秒スライド調整）
     let t_base;
     if (mode === 1) {
-      t_base = 2.5;
+      t_base = 3.0;
     } else if (mode === 2) {
-      t_base = 4;
+      t_base = 4.5;
     } else if (mode === 3) {
-      t_base = 5.5;
+      t_base = 6.0;
     } else {
-      t_base = 4;
+      t_base = 4.5;
     }
 
     let t = (t_base - S) % 10;
@@ -301,7 +289,6 @@
     document.getElementById('output').innerHTML = t2_display + " 秒";
   }
 
-  // 初回計算
   calculate();
 </script>
 </body>
