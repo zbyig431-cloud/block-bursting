@@ -67,7 +67,6 @@
       border-top: none;
     }
 
-    /* ロゴ再現ヘッダー */
     .header {
       text-align: center;
       margin-bottom: 20px;
@@ -284,10 +283,12 @@
       box-shadow: inset 0 0 15px rgba(255, 30, 86, 0.1);
     }
 
+    /* 逆算枠をメインより小さく調整 */
     .result-box.adjust-box {
       border-color: var(--adjust-color);
       background: rgba(255, 234, 0, 0.03);
       box-shadow: inset 0 0 15px rgba(255, 234, 0, 0.05);
+      padding: 8px;
     }
 
     .result-title {
@@ -300,6 +301,7 @@
       color: var(--adjust-color);
     }
 
+    /* メイン表示：大きいネオン */
     .result-value {
       font-size: 2.8rem;
       font-weight: bold;
@@ -308,8 +310,12 @@
       line-height: 1;
       margin: 8px 0;
     }
+    
+    /* 逆算の数値サイズを小さめに変更 */
     .adjust-box .result-value {
-      text-shadow: 0 0 12px var(--adjust-color), 0 0 25px var(--adjust-color);
+      font-size: 1.8rem; 
+      text-shadow: 0 0 8px var(--adjust-color);
+      margin: 4px 0;
     }
 
     .bottom-space {
@@ -322,7 +328,6 @@
 <div class="wrapper">
   <div class="panel">
     
-    <!-- 新デザインヘッダー -->
     <div class="header">
       <div class="logo-main">绝望要塞</div>
       <div class="logo-sub">IMPOSSIBLE GAMES</div>
@@ -350,11 +355,11 @@
     <div class="form-group">
       <div class="label"><div>突破球数</div></div>
       <div class="segment-control">
-        <button class="segment-btn" id="mode1" onclick="changeMode(1)">1球</button>
-        <button class="segment-btn active" id="mode2" onclick="changeMode(2)">2球</button>
+        <button class="segment-btn active" id="mode1" onclick="changeMode(1)">1球</button>
+        <button class="segment-btn" id="mode2" onclick="changeMode(2)">2球</button>
         <button class="segment-btn" id="mode3" onclick="changeMode(3)">3球</button>
       </div>
-      <input type="hidden" id="mode" value="2">
+      <input type="hidden" id="mode" value="1">
     </div>
 
     <!-- 裏面/球目 -->
@@ -383,13 +388,13 @@
     </div>
 
     <div class="results-container">
-      <!-- 2.50秒調整用の逆算別枠 -->
+      <!-- 2.50秒調整用枠（サイズを縮小） -->
       <div class="result-box adjust-box">
         <div class="result-title">NEXT TARGET ADJUST (FOR 2.50s)</div>
         <div class="result-value" id="adjust-output">0.00 秒</div>
       </div>
 
-      <!-- 通常の計算結果枠 -->
+      <!-- 通常の計算結果枠（メインサイズ） -->
       <div class="result-box">
         <div class="result-title">TARGET TIMING</div>
         <div class="result-value" id="output">0.00 秒</div>
@@ -450,14 +455,13 @@
     speakText("音声入力を開始します");
   }
 
-  // VOICE STOP時にリセット処理(allReset)を走らせるよう統合
   function stopVoiceRecognition() {
     if (!recognition) return;
     isVoiceActive = false;
     document.getElementById('voice-start').classList.remove('listening');
     recognition.stop();
     speakText("音声入力を終了します");
-    allReset(); // リセットを実行
+    allReset(); 
   }
 
   function parseSpeech(text) {
@@ -479,18 +483,31 @@
     if (normalized.includes("表") || normalized.includes("おもて")) {
       frontSpeakCount++;
       
+      // 値をスロットに格納
       if (frontSpeakCount === 1) {
         document.getElementById('input1').value = value.toFixed(2);
-        changeMode(1);
       } else if (frontSpeakCount === 2) {
         document.getElementById('input2').value = value.toFixed(2);
-        changeMode(2);
       } else {
         document.getElementById('input3').value = value.toFixed(2);
-        changeMode(3);
       }
 
       const isClear = normalized.includes("突破") || normalized.includes("とっぱ") || frontSpeakCount >= 3;
+      
+      // 【重要】「突破」と言っていない場合は、次の球数モードへ自動移行させてから計算する
+      if (!isClear) {
+        if (frontSpeakCount === 1) {
+          changeMode(2); // 1球目入力検知 -> 2球突破モードへ移行
+        } else if (frontSpeakCount === 2) {
+          changeMode(3); // 2球目入力検知 -> 3球突破モードへ移行
+        }
+      } else {
+        // 「突破」と言われた場合は、現在の入力カウントに応じたモードで確定させる
+        if (frontSpeakCount === 1) changeMode(1);
+        if (frontSpeakCount === 2) changeMode(2);
+        if (frontSpeakCount === 3) changeMode(3);
+      }
+
       calculate(true, 'front', isClear);
     } 
     else if (normalized.includes("裏") || normalized.includes("うら")) {
@@ -540,6 +557,7 @@
     calculate(isFromVoice, 'rear', false);
   }
 
+  // 初期段階・リセット段階を「1球突破」へ変更
   function allReset() {
     document.getElementById('input1').value = "";
     document.getElementById('input2').value = "";
@@ -550,7 +568,7 @@
     frontSpeakCount = 0;
     document.getElementById('accumulated-display').innerHTML = "STOCKED: 0.00s";
     
-    changeMode(2);
+    changeMode(1); // デフォルトを 1球 に設定
     changeTargetN(1);
     
     calculate(false);
@@ -560,7 +578,7 @@
     const num1 = parseFloat(document.getElementById('input1').value) || 0;
     const num2 = parseFloat(document.getElementById('input2').value) || 0;
     const num3 = parseFloat(document.getElementById('input3').value) || 0;
-    const mode = parseInt(document.getElementById('mode').value) || 2;
+    const mode = parseInt(document.getElementById('mode').value) || 1;
     const n = parseInt(document.getElementById('n').value) || 1;
     
     const currentWInput = parseFloat(document.getElementById('w').value) || 0;
@@ -573,7 +591,7 @@
     if (mode === 1) t_base = 3.0;
     else if (mode === 2) t_base = 4.5;
     else if (mode === 3) t_base = 6.0;
-    else t_base = 4.5;
+    else t_base = 3.0;
 
     let t = (t_base - S) % 10;
     if (t < 0) t += 10;
@@ -584,15 +602,13 @@
     const t2_display = t2.toFixed(2);
     document.getElementById('output').innerHTML = t2_display + " 秒";
 
-    // 2. 修正版：「答えを2.50秒にするため」の逆算値計算
-    // 結果を2.50秒にするために満たすべき表面合計(targetS)を算出
+    // 2. 「答えを2.50秒にするため」の逆算値計算 (現在選択されているモード基準)
     let targetS;
     if (mode === 1) targetS = 0.5;
     else if (mode === 2) targetS = 2.0;
     else if (mode === 3) targetS = 3.5;
-    else targetS = 2.0;
+    else targetS = 0.5;
 
-    // 目標の合計に到達するために「次に追加すべき秒数」を算出
     let requiredNext = (targetS - S) % 10;
     if (requiredNext < 0) requiredNext += 10;
     
